@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="theme-color" content="#c2e9fb" />
+  <title>六一快乐，小朋友</title>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; min-height: 100%; background: #e0f2fe; color: #334155; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; overflow-x: hidden; }
+    body { position: relative; }
+    
+    /* 夏日晴空渐变背景 */
+    body::before {
+      content: ""; position: fixed; inset: 0; z-index: -5;
+      background:
+        radial-gradient(circle at 10% 20%, rgba(255, 248, 225, 0.6), transparent 40%),
+        radial-gradient(circle at 90% 15%, rgba(224, 242, 254, 0.8), transparent 50%),
+        radial-gradient(circle at 50% 80%, rgba(219, 250, 237, 0.6), transparent 50%),
+        linear-gradient(180deg, #a1c4fd 0%, #c2e9fb 50%, #e0f2fe 100%);
+      animation: breathe 12s ease-in-out infinite alternate;
+    }
+    body::after {
+      content: ""; position: fixed; inset: 0; z-index: -4; pointer-events: none;
+      background-image:
+        radial-gradient(rgba(255,255,255,0.8) 0 1px, transparent 1.5px),
+        radial-gradient(rgba(255,255,255,0.5) 0 1px, transparent 1px);
+      background-size: 45px 45px, 80px 80px; opacity: 0.5;
+    }
+    @keyframes breathe { 0% { filter: brightness(1); } 100% { filter: brightness(1.08); } }
+
+    /* 游乐园气球缓慢漂浮特效 */
+    .balloons-wrap {
+      position: fixed; inset: 0; pointer-events: none; z-index: 10; overflow: hidden;
+    }
+    .f-balloon {
+      position: absolute; bottom: -100px; font-size: 46px;
+      animation: floatUp linear infinite;
+      filter: drop-shadow(0 8px 12px rgba(236, 72, 153, 0.2));
+    }
+    .f-balloon:nth-child(1) { left: 12%; animation-duration: 22s; animation-delay: 0s; font-size: 50px; }
+    .f-balloon:nth-child(2) { left: 55%; animation-duration: 18s; animation-delay: 6s; font-size: 42px; }
+    .f-balloon:nth-child(3) { left: 82%; animation-duration: 26s; animation-delay: 2s; font-size: 58px; }
+    @keyframes floatUp {
+      0% { transform: translateY(0) translateX(0) rotate(-8deg); }
+      50% { transform: translateY(-60vh) translateX(25px) rotate(8deg); }
+      100% { transform: translateY(-120vh) translateX(-20px) rotate(-8deg); }
+    }
+
+    canvas#space, canvas#fireworks { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    canvas#space { z-index: -3; }
+    canvas#fireworks { z-index: 30; }
+
+    /* 清爽音乐按钮 */
+    .music-btn {
+      position: fixed; top: calc(16px + env(safe-area-inset-top)); right: 16px; z-index: 60;
+      width: 44px; height: 44px; border: 2px solid #fff; border-radius: 50%;
+      background: rgba(255,255,255,0.6); color: #64748b; 
+      box-shadow: 0 4px 12px rgba(161, 196, 253, 0.4); 
+      display: grid; place-items: center; font-size: 22px; transition: 0.3s;
+    }
+    .music-btn.playing { animation: spin 4s linear infinite; color: #38bdf8; border-color: #7dd3fc; box-shadow: 0 0 20px rgba(125, 211, 252, 0.6); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .page { position: relative; z-index: 2; }
+    section { min-height: 100vh; padding: 76px 24px 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    
+    .hero { text-align: center; padding-top: 80px; }
+    .hero .to {
+      font-size: clamp(22px, 6vw, 36px); line-height: 1.4; font-weight: 600; letter-spacing: 2px;
+      color: #475569; opacity: 0; transform: translateY(20px); 
+      animation: fadeUp 2s 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+    .hero .wish {
+      margin-top: 20px; font-size: clamp(28px, 9vw, 56px); line-height: 1.3; font-weight: 800; letter-spacing: 1px;
+      color: #0ea5e9;
+      opacity: 0; transform: translateY(20px); animation: fadeUp 2s 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards, floatBob 3s 3.8s ease-in-out infinite alternate;
+      text-shadow: 0 4px 16px rgba(255,255,255,0.8), 0 2px 4px rgba(14,165,233,0.3);
+    }
+    .hero .hint { margin-top: 40px; font-size: 15px; font-weight: 500; color: #64748b; letter-spacing: 3px; opacity: 0; animation: fadeIn 2s 3.5s ease forwards; }
+    
+    .hero .cat-photo-wrap {
+      margin-top: 36px; opacity: 0; transform: translateY(20px);
+      animation: fadeIn 2s 2s ease forwards, floatBob 3.5s 2.5s ease-in-out infinite alternate;
+      display: flex; justify-content: center; align-items: center;
+    }
+    
+    .hero .cat-photo {
+      width: 160px; height: 160px; border-radius: 50%;
+      border: 4px solid #fff; box-shadow: 0 12px 32px rgba(125, 211, 252, 0.6); 
+      object-fit: cover; background: rgba(255,255,255,0.8);
+      animation: spinPhoto 12s linear infinite; 
+    }
+
+    @keyframes spinPhoto { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { to { opacity: 1; } }
+    @keyframes floatBob { from { transform: translateY(0); } to { transform: translateY(-8px); } }
+
+    /* 明亮版亚克力玻璃面板 */
+    .glass {
+      width: min(100%, 400px); border-radius: 28px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.4) 100%);
+      border: 1.5px solid rgba(255,255,255,0.9);
+      box-shadow: 0 16px 32px rgba(161, 196, 253, 0.25), inset 0 2px 4px rgba(255,255,255,1);
+    }
+    .title { width: min(100%, 390px); margin: 0 0 28px; font-size: 22px; font-weight: 600; letter-spacing: 2px; color: #334155; text-align: left; }
+
+    .gallery-wrap { width: min(100%, 410px); overflow: hidden; padding: 20px 16px; }
+    .gallery { display: flex; transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1); touch-action: pan-y; }
+    .photo-card { min-width: 100%; padding: 0 8px; }
+    .photo-card img {
+      width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: block; border-radius: 20px;
+      padding: 8px; background: #fff; box-shadow: 0 12px 24px rgba(148, 163, 184, 0.2);
+    }
+    .dots { display: flex; gap: 8px; justify-content: center; margin: 24px 0 4px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.6); border: 1px solid rgba(148,163,184,0.3); transition: 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+    .dot.active { width: 24px; border-radius: 4px; background: #38bdf8; border-color: #38bdf8; box-shadow: 0 0 12px rgba(56, 189, 248, 0.4); }
+    
+    .viewer { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(255,255,255,0.85); z-index: 80; }
+    .viewer.show { display: flex; animation: fadeIn 0.3s ease; }
+    .viewer img { max-width: 100%; max-height: 85vh; border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.15); padding: 6px; background: #fff; }
+
+    .letter { padding: 36px 28px; font-size: 17px; line-height: 2.2; letter-spacing: 1.5px; color: #475569; white-space: pre-line; min-height: 640px; font-weight: 500; }
+    .cursor::after { content: ""; display: inline-block; width: 2px; height: 1em; background: #38bdf8; margin-left: 4px; vertical-align: -0.15em; animation: blink 0.9s step-end infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* 童趣礼物按钮 */
+    .gift-btn {
+      border: 3px solid #fff; border-radius: 50px; color: #fff; font-size: 18px; font-weight: bold; letter-spacing: 1px; padding: 18px 36px;
+      background: linear-gradient(135deg, #fbcfe8, #a7f3d0, #bae6fd);
+      background-size: 200% 200%;
+      box-shadow: 0 12px 24px rgba(186, 230, 253, 0.6), inset 0 2px 6px rgba(255,255,255,0.8);
+      transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; animation: gradientMove 3s ease infinite;
+    }
+    @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    .gift-btn:active { transform: scale(0.94); box-shadow: 0 4px 12px rgba(186, 230, 253, 0.4); }
+    
+    .gift-msg { margin-top: 32px; padding: 24px; text-align: center; font-size: 16px; line-height: 1.6; font-weight: bold; color: #ec4899; letter-spacing: 1px; opacity: 0; transform: translateY(16px); transition: 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
+    .gift-msg.show { opacity: 1; transform: translateY(0); }
+
+    /* 认证成就勋章 */
+    .achievement-card {
+      display: inline-block; font-size: 20px; color: #f59e0b; font-weight: 900; letter-spacing: 2px;
+      margin-bottom: 16px; padding-bottom: 12px;
+      border-bottom: 2px dashed rgba(245, 158, 11, 0.3);
+      text-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    }
+
+    .final-letter { padding: 36px 28px; font-size: 17px; line-height: 2.2; letter-spacing: 1.5px; color: #475569; font-weight: 500; }
+    
+    .glow-effect.show { animation: warmGlow 3.5s ease-in-out infinite alternate forwards !important; }
+    @keyframes warmGlow {
+      0% { box-shadow: 0 16px 32px rgba(161, 196, 253, 0.25), inset 0 2px 4px rgba(255,255,255,1); transform: translateY(0); }
+      100% { box-shadow: 0 20px 40px rgba(251, 113, 133, 0.25), 0 0 25px rgba(251, 113, 133, 0.2), inset 0 2px 4px rgba(255,255,255,1); transform: translateY(-5px); }
+    }
+
+    .stagger-p { margin: 0 0 24px 0; opacity: 0; filter: blur(10px); transform: translateY(20px) scale(0.98); transition: opacity 1.2s ease, filter 1.5s ease, transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1); }
+    .stagger-p:last-child { margin-bottom: 0; }
+    
+    .reveal.show .stagger-p { opacity: 1; filter: blur(0); transform: translateY(0) scale(1); }
+    .reveal.show .stagger-p:nth-child(1) { transition-delay: 0.2s; }
+    .reveal.show .stagger-p:nth-child(2) { transition-delay: 0.8s; }
+    .reveal.show .stagger-p:nth-child(3) { transition-delay: 1.4s; }
+    .reveal.show .stagger-p:nth-child(4) { transition-delay: 2.0s; }
+    
+    .ending { min-height: 110vh; text-align: center; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+    .like { font-size: clamp(40px, 10vw, 64px); font-weight: 900; letter-spacing: 2px; color: #f43f5e; opacity: 0; transform: scale(0.9); transition: 1.5s cubic-bezier(0.2, 0.8, 0.2, 1); filter: drop-shadow(0 8px 16px rgba(244, 63, 94, 0.2)); }
+    .ending.show .like { opacity: 1; transform: scale(1); }
+    .future { margin-top: 32px; font-size: 19px; line-height: 2; font-weight: 600; letter-spacing: 2px; color: #0284c7; opacity: 0; transform: translateY(24px); transition: 1.5s 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); white-space: pre-line; }
+    .ending.show .future { opacity: 1; transform: translateY(0); }
+
+    .reveal { opacity: 0; transform: translateY(30px); transition: 1.2s cubic-bezier(0.2, 0.8, 0.2, 1); }
+    .reveal.show { opacity: 1; transform: translateY(0); }
+    @media (max-width: 360px) { section { padding-left: 20px; padding-right: 20px; } .letter, .final-letter { font-size: 16px; padding: 28px 20px; } .gift-btn { font-size: 16px; padding: 16px 30px; } }
+  
+    canvas#sakura{position:fixed;inset:0;pointer-events:none;z-index:-2}
+  </style>
+</head>
+<body>
+  <div class="balloons-wrap">
+    <div class="f-balloon">🎈</div>
+    <div class="f-balloon">🎈</div>
+    <div class="f-balloon">🎈</div>
+  </div>
+
+  <canvas id="space"></canvas>
+  <canvas id="fireworks"></canvas>
+  <canvas id="sakura"></canvas>
+  <audio id="bgm" src="music.mp3" loop preload="auto"></audio>
+  <button class="music-btn" id="musicBtn" aria-label="音乐开关">♫</button>
+
+  <main class="page">
+    <section class="hero">
+      <div class="to" id="heroTo">送给世界上最可爱的 [黄容] 🧸</div>
+      <div class="wish">今天不当大人，只做小朋友🎡</div>
+      <div class="hint">轻轻滑动屏幕，让“过来”陪你踩踩🐾</div>
+      
+      <div class="cat-photo-wrap">
+        <img src="cat.jpg" alt="过来" class="cat-photo">
+      </div>
+    </section>
+
+    <section>
+      <h2 class="title reveal">喜欢你卡姿兰大眼睛，<br>喜欢你走路像猩猩。</h2>
+      <div class="gallery-wrap glass reveal" id="galleryWrap">
+        <div class="gallery" id="gallery"></div>
+        <div class="dots" id="dots"></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="title reveal">有些话，想慢慢讲给你听</h2>
+      <div class="letter glass cursor reveal" id="typewriter"></div>
+    </section>
+
+    <section>
+      <button class="gift-btn reveal" id="giftBtn">点击领取六一专属盲盒🎁</button>
+      <div class="gift-msg glass" id="giftMsg">
+        <div class="achievement-card">🎖 六一儿童节专属认证</div><br>
+        喵星联合会正式宣布🐈：<br>
+        该名人类今日已恢复出厂设置，<br>变回无忧无虑的小孩，由「过来」全天候守护。<br><br>
+        🎉 叮！附赠一张「无门槛零食券」🎫<br>
+        随时可以找我兑换哦！
+      </div>
+    </section>
+
+    <section>
+      <h2 class="title reveal">写给我的小朋友</h2>
+      <div class="final-letter glass reveal glow-effect">
+        <p class="stagger-p">其实做这个小网页，<br>只是想借着今天这个可爱的日子，<br>逗你开心一下。</p>
+        <p class="stagger-p">想在这充满童心的一天，<br>把夏天的微风、轻快的钢琴声，<br>还有“过来”踩出的粉色小脚印，<br>全都打包送给你。</p>
+        <p class="stagger-p">希望你在属于自己的世界里，<br>总能找到安心的角落。</p>
+        <p class="stagger-p">节日快乐，<br>我的小朋友🎈</p>
+      </div>
+    </section>
+
+    <section class="ending" id="ending">
+      <div class="like">Best Wishes ❤️</div>
+      <div class="future">未来的每一天，<br>都有我和“过来”陪着你。</div>
+    </section>
+  </main>
+
+  <div class="viewer" id="viewer"><img id="viewerImg" alt="preview"></div>
+
+  <script>
+    (function () {
+      var CONFIG = {
+        images: ['image3.jpg'],
+        typeText: "六一快乐呀🍭\n\n大人的世界有时候挺辛苦的吧？\n每天要面对那么多必须要完成的事。\n\n但在今天，\n你可以暂时卸下大人的盔甲，\n做回那个只需要吹泡泡的小女孩。\n\n我知道“过来”总是在你身边，\n用它软绵绵的蹭蹭和呼噜声治愈你。\n\n我也希望能像它一样，\n在你觉得累的时候，\n成为让你感到安心和自在的存在。\n\n愿你以后的日子，\n不管多忙多累，\n心里总有一块属于自己的游乐园。\n\n不用去迎合谁的期待，\n只做最快乐的自己✨",
+        toys: ["🎈", "🍭", "🧸", "🎡", "🍬", "🍦", "✨", "🎀"], 
+        bubbles: ["🫧", "☁️"] 
+      };
+
+      CONFIG.images.forEach(function(src) { var img = new Image(); img.src = src; });
+
+      var gallery = document.getElementById("gallery");
+      var dots = document.getElementById("dots");
+      CONFIG.images.forEach(function(src, i) {
+        var card = document.createElement("div"); card.className = "photo-card";
+        var img = document.createElement("img"); img.src = src; card.appendChild(img); gallery.appendChild(card);
+        var dot = document.createElement("div"); dot.className = "dot" + (i === 0 ? " active" : ""); dots.appendChild(dot);
+      });
+
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var space = document.getElementById("space"), sctx = space.getContext("2d");
+      var fire = document.getElementById("fireworks"), fctx = fire.getContext("2d");
+      var W = 0, H = 0, bubbles = [], fireworks = [], emojis = []; 
+
+      function resize() {
+        W = window.innerWidth; H = window.innerHeight;
+        [space, fire].forEach(function (c) {
+          c.width = W * dpr; c.height = H * dpr; c.style.width = W + "px"; c.style.height = H + "px";
+          c.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
+        });
+        bubbles = Array.from({ length: 40 }, function () {
+          return { x: Math.random() * W, y: Math.random() * H, r: Math.random() * 8 + 4, vy: -0.2 - Math.random() * 0.5, a: Math.random() * 0.5 + 0.2 };
+        });
+      }
+      window.addEventListener("resize", resize, { passive: true }); resize();
+
+      function drawSpace() {
+        sctx.clearRect(0, 0, W, H);
+        bubbles.forEach(function (p) {
+          p.y += p.vy;
+          if (p.y < -20) { p.y = H + 20; p.x = Math.random() * W; }
+          sctx.beginPath();
+          sctx.fillStyle = "rgba(255, 255, 255, " + p.a + ")";
+          sctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          sctx.fill();
+          sctx.beginPath();
+          sctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+          sctx.arc(p.x - p.r * 0.3, p.y - p.r * 0.3, p.r * 0.2, 0, Math.PI * 2);
+          sctx.fill();
+        });
+        requestAnimationFrame(drawSpace);
+      }
+      drawSpace();
+
+      var bgm = document.getElementById("bgm"), musicBtn = document.getElementById("musicBtn"), unlocked = false;
+      function playMusic() { var p = bgm.play(); if (p && p.then) p.then(function () { musicBtn.classList.add("playing"); }).catch(function () {}); }
+      function unlockMusic() { if (!unlocked) { unlocked = true; playMusic(); } }
+      document.addEventListener("WeixinJSBridgeReady", playMusic, false);
+      document.addEventListener("touchstart", unlockMusic, { passive: true, once: true });
+      document.addEventListener("click", unlockMusic, { once: true });
+      setTimeout(playMusic, 800);
+      musicBtn.addEventListener("click", function (e) { e.stopPropagation(); if (bgm.paused) playMusic(); else { bgm.pause(); musicBtn.classList.remove("playing"); } });
+
+      function drawForeground() {
+        fctx.clearRect(0, 0, W, H);
+        
+        fireworks.forEach(function (p, i) {
+          p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.vx *= 0.95; p.vy *= 0.95; p.life -= 0.02; p.rot += p.vr;
+          fctx.save(); fctx.translate(p.x, p.y); fctx.rotate(p.rot);
+          fctx.globalAlpha = Math.max(p.life, 0); fctx.fillStyle = p.c; 
+          fctx.fillRect(-p.r, -p.r/2, p.r*2, p.r); 
+          fctx.restore();
+          if (p.life <= 0) fireworks.splice(i, 1);
+        });
+
+        fctx.textAlign = "center"; fctx.textBaseline = "middle";
+        for (var i = emojis.length - 1; i >= 0; i--) {
+          var p = emojis[i];
+          
+          if (p.type === 'bubble') { 
+            p.x += Math.sin(p.y * 0.02) * 0.5; p.y += p.vy; p.rot += p.vr;
+            if (p.y < -40) p.dead = true;
+          } else if (p.type === 'trail') { 
+            p.alpha -= 0.015;
+            if (p.alpha <= 0) p.dead = true;
+          } else if (p.type === 'burst') { 
+            p.vx *= p.fric; p.vy *= p.fric; p.vy += 0.15; 
+            p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+            if (p.y > H + 40) p.dead = true;
+          } else if (p.type === 'rain') {
+            p.y += p.vy; p.rot += p.vr;
+            if (p.y > H + 40) p.dead = true;
+          }
+
+          if (p.dead) { emojis.splice(i, 1); continue; }
+
+          fctx.save(); 
+          fctx.translate(p.x, p.y); 
+          fctx.rotate(p.rot); 
+          fctx.scale(p.scale, p.scale);
+          fctx.globalAlpha = Math.max(p.alpha, 0); 
+          
+          if (p.type === 'trail') {
+            fctx.fillStyle = "#fb7185"; 
+            fctx.beginPath();
+            fctx.arc(-2.5, 1, 3.5, 0, Math.PI * 2); 
+            fctx.arc(2.5, 1, 3.5, 0, Math.PI * 2); 
+            fctx.arc(0, 3.5, 3.5, 0, Math.PI * 2); 
+            fctx.fill();
+            fctx.beginPath();
+            fctx.ellipse(0, 1.5, 5, 4, 0, 0, Math.PI * 2); 
+            fctx.fill();
+            
+            var toes = [
+              {x: -6.5, y: -3.5, rx: 2, ry: 3.2, r: -0.3},
+              {x: -2.5, y: -7.5, rx: 2.2, ry: 3.5, r: -0.1},
+              {x: 2.5, y: -7.5, rx: 2.2, ry: 3.5, r: 0.1},
+              {x: 6.5, y: -3.5, rx: 2, ry: 3.2, r: 0.3}
+            ];
+            toes.forEach(function(t) {
+              fctx.beginPath();
+              fctx.ellipse(t.x, t.y, t.rx, t.ry, t.r, 0, Math.PI * 2);
+              fctx.fill();
+            });
+          } else {
+            fctx.font = p.size + "px sans-serif";
+            fctx.fillText(p.char, 0, 0); 
+          }
+          fctx.restore();
+        }
+        fctx.globalAlpha = 1; requestAnimationFrame(drawForeground);
+      }
+      drawForeground();
+
+      setInterval(function() {
+        emojis.push({
+          type: 'bubble', char: Math.random() > 0.5 ? CONFIG.bubbles[0] : CONFIG.bubbles[1],
+          x: Math.random() * W, y: H + 40, size: 16 + Math.random() * 14,
+          alpha: 0.8, rot: 0, scale: 1, vy: -0.8 - Math.random() * 1.5, vr: (Math.random() - 0.5) * 0.02, dead: false
+        });
+      }, 600);
+
+      var lastX = null, lastY = null;
+      var stepCount = 0;
+      
+      function createTrail(x, y) {
+        if (lastX === null) { lastX = x; lastY = y; return; }
+        
+        var dx = x - lastX;
+        var dy = y - lastY;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        
+        if (dist < 35) return; 
+
+        var angle = Math.atan2(dy, dx); 
+        stepCount++;
+        
+        var isRightPaw = stepCount % 2 === 0; 
+        
+        var perpAngle = angle + (isRightPaw ? Math.PI/2 : -Math.PI/2);
+        var offsetAmount = 14; 
+        var offsetX = Math.cos(perpAngle) * offsetAmount;
+        var offsetY = Math.sin(perpAngle) * offsetAmount;
+
+        var rot = angle + Math.PI/2 + (isRightPaw ? 0.15 : -0.15);
+
+        emojis.push({
+          type: 'trail', char: "", 
+          x: x + offsetX, y: y + offsetY, size: 22, alpha: 1, rot: rot, scale: 1,
+          vx: 0, vy: 0, vr: 0, dead: false
+        });
+        
+        lastX = x; lastY = y;
+      }
+      
+      document.addEventListener("touchstart", function (e) {
+        var t = e.touches[0];
+        if (t) { lastX = t.clientX; lastY = t.clientY; }
+      }, { passive: true });
+      document.addEventListener("touchmove", function (e) { 
+        var t = e.touches[0]; if (t) createTrail(t.clientX, t.clientY); 
+      }, { passive: true });
+      document.addEventListener("mousemove", function (e) { 
+        createTrail(e.clientX, e.clientY); 
+      }, { passive: true });
+
+      function launchConfetti(x, y, big) {
+        var colors = ["#fb7185", "#38bdf8", "#34d399", "#facc15", "#c084fc"];
+        var count = big ? 35 : 15; 
+        for (var i = 0; i < count; i++) {
+          var a = Math.PI * 2 * i / count + Math.random() * 0.2, sp = (big ? 4 : 2) + Math.random() * 4;
+          fireworks.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, r: Math.random() * 4 + 3, c: colors[Math.floor(Math.random() * colors.length)], rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.2 });
+        }
+      }
+      document.addEventListener("click", function (e) {
+        if (e.target.closest(".music-btn,.gift-btn,.viewer,.photo-card")) return;
+        launchConfetti(e.clientX, e.clientY, false);
+      });
+
+      var idx = 0, total = CONFIG.images.length, timer;
+      function go(n) { idx = (n + total) % total; gallery.style.transform = "translateX(" + (-idx * 100) + "%)"; [].forEach.call(dots.children, function (d, i) { d.classList.toggle("active", i === idx); }); }
+      function auto() { clearInterval(timer); timer = setInterval(function () { go(idx + 1); }, 3500); }
+      auto();
+      var sx = 0, dx = 0;
+      gallery.addEventListener("touchstart", function (e) { sx = e.touches[0].clientX; clearInterval(timer); }, { passive: true });
+      gallery.addEventListener("touchmove", function (e) { dx = e.touches[0].clientX - sx; }, { passive: true });
+      gallery.addEventListener("touchend", function () { if (Math.abs(dx) > 40) go(idx + (dx < 0 ? 1 : -1)); dx = 0; auto(); });
+      
+      var viewer = document.getElementById("viewer"), viewerImg = document.getElementById("viewerImg");
+      gallery.addEventListener("click", function (e) { if (e.target.tagName === "IMG") { viewerImg.src = e.target.src; viewer.classList.add("show"); } });
+      viewer.addEventListener("click", function () { viewer.classList.remove("show"); });
+
+      var tw = document.getElementById("typewriter"), typed = false;
+      function typeIt() {
+        if (typed) return; typed = true; var n = 0;
+        (function tick() { tw.textContent = CONFIG.typeText.slice(0, n++); if (n <= CONFIG.typeText.length) setTimeout(tick, 75); else tw.classList.remove("cursor"); })();
+      }
+
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (en.isIntersecting) { en.target.classList.add("show"); if (en.target.id === "typewriter") typeIt(); if (en.target.id === "ending") finalShow(); }
+        });
+      }, { threshold: 0.25 });
+      [].forEach.call(document.querySelectorAll(".reveal,#typewriter,#ending"), function (el) { io.observe(el); });
+
+      var giftBtn = document.getElementById("giftBtn"), giftMsg = document.getElementById("giftMsg");
+      giftBtn.addEventListener("click", function (e) {
+        giftMsg.classList.add("show"); 
+        launchConfetti(W / 2, H * 0.4, true); launchConfetti(W * 0.25, H * 0.3, true); launchConfetti(W * 0.75, H * 0.35, true);
+        
+        var rect = giftBtn.getBoundingClientRect(); var bx = rect.left + rect.width / 2, by = rect.top + rect.height / 2;
+        for (var i = 0; i < 40; i++) {
+          var angle = Math.random() * Math.PI * 2 - Math.PI / 2; 
+          var speed = 3 + Math.random() * 12;
+          emojis.push({
+            type: 'burst', char: CONFIG.toys[i % CONFIG.toys.length],
+            x: bx, y: by, size: 24 + Math.random()*8, alpha: 1, rot: Math.random() * Math.PI * 2, scale: 1,
+            vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, fric: 0.95, vr: (Math.random() - 0.5) * 0.2, dead: false
+          });
+        }
+      });
+
+      var sakura=document.getElementById('sakura');
+      var sk=sakura.getContext('2d');
+      function rs(){sakura.width=innerWidth;sakura.height=innerHeight}
+      rs();window.addEventListener('resize',rs);
+      var petals=Array.from({length:35},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:4+Math.random()*8,vx:-0.5+Math.random(),vy:1+Math.random()*2,a:Math.random()*6.28}));
+      (function anim(){
+       sk.clearRect(0,0,sakura.width,sakura.height);
+       petals.forEach(p=>{
+         p.x+=p.vx;p.y+=p.vy;p.a+=0.02;
+         if(p.y>innerHeight+20){p.y=-20;p.x=Math.random()*innerWidth}
+         sk.save();
+         sk.translate(p.x,p.y);sk.rotate(p.a);
+         sk.fillStyle='rgba(255,182,193,.8)';
+         sk.beginPath();sk.ellipse(0,0,p.r,p.r*0.6,0,0,6.28);sk.fill();
+         sk.restore();
+       });
+       requestAnimationFrame(anim);
+      })();
+
+      function finalShow() {
+        var ending = document.getElementById("ending"); if (ending.dataset.done) return; ending.dataset.done = "1"; ending.classList.add("show");
+        for (var i = 0; i < 6; i++) setTimeout(function () { launchConfetti(Math.random() * W, 80 + Math.random() * H * 0.45, true); }, i * 400);
+        
+        var rainTimer = setInterval(function () {
+          for (var j = 0; j < 4; j++) {
+            emojis.push({
+              type: 'rain', char: CONFIG.toys[Math.floor(Math.random() * CONFIG.toys.length)],
+              x: Math.random() * W, y: -40, size: 20 + Math.random() * 10, alpha: 1, rot: 0, scale: 1,
+              vy: 3 + Math.random() * 4, vr: (Math.random() - 0.5) * 0.1, dead: false
+            });
+          }
+        }, 300);
+        setTimeout(function () { clearInterval(rainTimer); }, 5000);
+      }
+    })();
+  </script>
+</body>
+</html>
