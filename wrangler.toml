@@ -5,6 +5,6 @@ compatibility_date = "2024-04-03"
 [vars]
 
 [[kv_namespaces]]
-binding = "VISITS_KV"
+binding = "VISIT_KV"
 id = "aae7ae232db5401fbea3b01adaddf832"
 preview_id = "aae7ae232db5401fbea3b01adaddf832"
