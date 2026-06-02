@@ -6,24 +6,25 @@
 1. 进入 **Workers & Pages** → **KV**
 2. 点击 **Create namespace**
 3. 命名为 `visits-kv`（或其他你喜欢的名字）
-4. 复制 Namespace ID
+4. 复制 Namespace ID（你的 ID 是：`aae7ae232db5401fbea3b01adaddf832`）
 
-## 2. 配置 wrangler.toml
+## 2. 在 Pages 项目中绑定 KV（关键步骤！）
 
-编辑 `wrangler.toml` 文件，将：
-- `your-kv-namespace-id` 替换为你的生产环境 KV ID
-- `your-preview-kv-namespace-id` 替换为你的预览环境 KV ID（可以和生产环境相同）
+如果项目已经部署：
+1. 进入你的 Pages 项目
+2. 点击 **设置** → **Functions**
+3. 找到 **KV 命名空间绑定** 部分
+4. 点击 **添加绑定**
+5. 变量名填入：`VISITS_KV`（必须完全一致！）
+6. KV 命名空间选择你创建的那个
+7. 点击 **保存并部署**
 
-## 3. 部署到 Cloudflare Pages
+## 3. 部署代码
 
 ### 方法一：通过 Git 部署
 1. 将代码推送到 GitHub/GitLab 仓库
-2. 在 Cloudflare Pages 中创建新项目
-3. 连接你的仓库
-4. 在项目设置中添加 KV 绑定：
-   - **设置** → **Functions** → **KV 命名空间绑定**
-   - 变量名：`VISITS_KV`
-   - 命名空间：选择你创建的 KV
+2. 在 Cloudflare Pages 中创建或更新项目
+3. 连接你的仓库并部署
 
 ### 方法二：通过 Wrangler CLI 部署
 ```bash
