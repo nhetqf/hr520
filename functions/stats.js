@@ -169,36 +169,69 @@ function formatStatsHTML(stats) {
 </html>`;
 }
 
+function getTodayKey() {
+  const now = new Date();
+  const shanghai = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Shanghai" }));
+  return shanghai.toISOString().split("T")[0];
+}
+
+// 从 D1 数据库查询统计数据
+async function getStatsFromD1(env) {
+  const todayKey = getTodayKey();
+
+  // 并行查询所有统计数据
+  const [totalResult, todayResult, deviceResult, recentResult] = await Promise.all([
+    env.DB.prepare('SELECT COUNT(*) as count FROM visits').first(),
+    env.DB.prepare('SELECT COUNT(*) as count FROM visits WHERE visit_date = ?').bind(todayKey).first(),
+    env.DB.prepare('SELECT device, COUNT(*) as count FROM visits GROUP BY device ORDER BY count DESC').all(),
+    env.DB.prepare('SELECT ip, country, device, browser, os, is_mobile, created_at FROM visits ORDER BY created_at DESC LIMIT 100').all()
+  ]);
+
+  // 转换设备统计格式
+  const deviceStats = {};
+  if (deviceResult.results) {
+    deviceResult.results.forEach(row => {
+      deviceStats[row.device] = row.count;
+    });
+  }
+
+  // 转换最近访问记录格式
+  const recentVisits = [];
+  if (recentResult.results) {
+    recentResult.results.forEach(row => {
+      recentVisits.push({
+        time: row.created_at,
+        ip: row.ip,
+        country: row.country,
+        device: row.device,
+        browser: row.browser,
+        isMobile: row.is_mobile === 1
+      });
+    });
+  }
+
+  return {
+    totalVisits: totalResult?.count || 0,
+    todayVisits: todayResult?.count || 0,
+    deviceStats,
+    recentVisits
+  };
+}
+
 export async function onRequest(context) {
   const { env, request } = context;
   const url = new URL(request.url);
   const showDetails = url.searchParams.get('details') !== 'false';
   const jsonOnly = url.searchParams.get('format') === 'json';
 
-  if (!env.VISITS_KV) {
-    return new Response(formatStatsHTML({
-      totalVisits: 0,
-      todayVisits: 0,
-      deviceStats: {},
-      lastUpdated: new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })
-    }), {
-      headers: { "Content-Type": "text/html; charset=utf-8" }
-    });
-  }
-
   try {
-    const totalVisits = await env.VISITS_KV.get("total_visits", "text") || "0";
-    const todayKey = getTodayKey();
-    const todayVisits = await env.VISITS_KV.get(`visits_${todayKey}`, "text") || "0";
-    const deviceStats = await env.VISITS_KV.get("device_stats", "json") || {};
-    const recentVisits = showDetails ? (await env.VISITS_KV.get("recent_visits", "json") || []) : null;
+    // 从 D1 数据库查询
+    console.log('[D1] 从数据库查询统计');
+    const stats = await getStatsFromD1(env);
 
     const responseData = {
-      totalVisits: parseInt(totalVisits),
-      todayVisits: parseInt(todayVisits),
-      deviceStats,
-      lastUpdated: new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" }),
-      recentVisits
+      ...stats,
+      lastUpdated: new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })
     };
 
     if (jsonOnly) {
@@ -212,22 +245,16 @@ export async function onRequest(context) {
     });
   } catch (e) {
     console.error("获取统计数据失败:", e);
-    return new Response(formatStatsHTML({
+
+    const errorStats = {
       totalVisits: 0,
       todayVisits: 0,
       deviceStats: {},
       lastUpdated: new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })
-    }), {
+    };
+
+    return new Response(formatStatsHTML(errorStats), {
       headers: { "Content-Type": "text/html; charset=utf-8" }
     });
   }
-}
-
-function getTodayKey() {
-  const now = new Date();
-  const shanghai = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Shanghai" }));
-  const year = shanghai.getFullYear();
-  const month = String(shanghai.getMonth() + 1).padStart(2, '0');
-  const day = String(shanghai.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
 }

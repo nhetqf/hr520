@@ -2,9 +2,14 @@
 name = "hr-website"
 compatibility_date = "2024-04-03"
 
+# Pages 配置：指定静态文件目录
+[pages]
+build_output_dir = "."
+
 [vars]
 
-[[kv_namespaces]]
-binding = "VISITS_KV"
-id = "aae7ae232db5401fbea3b01adaddf832"
-preview_id = "aae7ae232db5401fbea3b01adaddf832"
+# D1 数据库配置（替代 KV，免费额度更大）
+[[d1_databases]]
+binding = "DB"
+database_name = "hr-visits-db"
+database_id = "ad398477-a9ff-4a85-b820-e90b2b58c612"

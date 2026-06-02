@@ -50,46 +50,25 @@ export async function onRequest(context) {
   const uaInfo = parseUserAgent(userAgent);
   const todayKey = getTodayKey();
 
-  const visitRecord = {
-    time,
-    ip,
-    country,
-    device: uaInfo.device,
-    browser: uaInfo.browser,
-    os: uaInfo.os,
-    isMobile: uaInfo.isMobile,
-    userAgent: userAgent.substring(0, 200)
-  };
-
   console.log(`[访问记录] 时间: ${time} | IP: ${ip} | 国家: ${country} | 设备: ${uaInfo.device} | 浏览器: ${uaInfo.browser}`);
 
   try {
-    if (env.VISITS_KV) {
-      const totalKey = "total_visits";
-      const todayVisitsKey = `visits_${todayKey}`;
-      const deviceStatsKey = "device_stats";
-      const recentVisitsKey = "recent_visits";
+    // 使用 D1 数据库存储（免费额度：500万次读取/天 + 10万次写入/天）
+    await env.DB.prepare(`
+      INSERT INTO visits (ip, country, device, browser, os, is_mobile, user_agent, visit_date)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      ip,
+      country,
+      uaInfo.device,
+      uaInfo.browser,
+      uaInfo.os,
+      uaInfo.isMobile ? 1 : 0,
+      userAgent.substring(0, 200),
+      todayKey
+    ).run();
 
-      let totalVisits = await env.VISITS_KV.get(totalKey, "text");
-      totalVisits = totalVisits ? parseInt(totalVisits) + 1 : 1;
-      await env.VISITS_KV.put(totalKey, totalVisits.toString());
-
-      let todayVisits = await env.VISITS_KV.get(todayVisitsKey, "text");
-      todayVisits = todayVisits ? parseInt(todayVisits) + 1 : 1;
-      await env.VISITS_KV.put(todayVisitsKey, todayVisits.toString(), { expirationTtl: 86400 * 30 });
-
-      let deviceStats = await env.VISITS_KV.get(deviceStatsKey, "json");
-      if (!deviceStats) deviceStats = {};
-      const deviceKey = uaInfo.device;
-      deviceStats[deviceKey] = (deviceStats[deviceKey] || 0) + 1;
-      await env.VISITS_KV.put(deviceStatsKey, JSON.stringify(deviceStats));
-
-      let recentVisits = await env.VISITS_KV.get(recentVisitsKey, "json");
-      if (!recentVisits) recentVisits = [];
-      recentVisits.unshift(visitRecord);
-      if (recentVisits.length > 100) recentVisits = recentVisits.slice(0, 100);
-      await env.VISITS_KV.put(recentVisitsKey, JSON.stringify(recentVisits));
-    }
+    console.log(`[D1] 记录已保存到数据库`);
   } catch (e) {
     console.error("存储访问记录失败:", e);
   }
